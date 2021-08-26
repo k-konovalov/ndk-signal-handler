@@ -1,70 +1,7 @@
-#include <alloca.h>
-// Java
-#include <jni.h>
+#include "includes/Exception.h"
+#include "includes/utils.h"
 
-// C++
-#include <csignal>
-#include <cstdio>
-#include <cstring>
-#include <exception>
-#include <memory>
-
-// C++ ABI
-#include <cxxabi.h>
-
-// Android
-#include <android/log.h>
-#include <unistd.h>
-#include <fstream>
-////////////////////////////////////////////////////////////////////////////
-
-/// Helper macro to get size of an fixed length array during compile time
-#define sizeofa(array) sizeof(array) / sizeof(array[0])
-
-/// tgkill syscall id for backward compatibility (more signals available in many linux kernels)
-#define __NR_tgkill 270
-
-//// ---------------  New
-#include "Logger.h"
-#include <sstream>
-#include <fcntl.h>
-#include <sys/stat.h>
-
-char *pmsg = new char[1000];
-char inbuf[1000];
-char *crash_absolute_path = "FIFO";
-std::string log_path;
-std::ofstream ofs;
-std::ifstream ifs;
-
-///////////////////////////////////////////////////////////////////////////
-
-/// Caught signals
-static const int SIGNALS_TO_CATCH[] = {
-        SIGABRT,
-        SIGBUS,
-        SIGFPE,
-        SIGSEGV,
-        SIGILL,
-        SIGSTKFLT,
-        SIGTRAP,
-};
-
-/// Signal handler context
-struct CrashInContext {
-    /// Old handlers of signals that we restore on de-initialization. Keep values for all possible
-    /// signals, for unused signals nullptr value is stored.
-    struct sigaction old_handlers[NSIG];
-};
-
-/// Crash handler function signature
-typedef void (*CrashSignalHandler)(int, siginfo*, void*);
-
-/// Global instance of context. Since an app can't crash twice in a single run, we can make this singleton.
-static CrashInContext* crashInContext = nullptr;
-
-/// Create a crash message using whatever available such as signal, C++ exception etc
-static const char* createCrashMessage(int signo, siginfo* siginfo) {
+const char* createCrashMessage(int signo, siginfo* siginfo) {
     void* current_exception = __cxxabiv1::__cxa_current_primary_exception();
     std::type_info* current_exception_type_info = __cxxabiv1::__cxa_current_exception_type();
 
@@ -119,15 +56,7 @@ static const char* createCrashMessage(int signo, siginfo* siginfo) {
     return abort_message;
 }
 
-
-
-/** Main signal handling function.
- * @param sig: The number of the signal that caused invocation of the
-              handler.
- * @param siginfo: A pointer to a siginfo_t, which is a structure containing further information about the signal
- * @param context: Signal context information that was saved on the user-space stack by the kernel
-*/
-static void nativeCrashSignalHandler(int signo, siginfo *siginfo, void *ctxvoid) {
+void nativeCrashSignalHandler(int signo, siginfo *siginfo, void *ctxvoid) {
     // Restoring an old handler to make built-in Android crash mechanism work.
     sigaction(signo, &crashInContext->old_handlers[signo], nullptr);
     auto *ctx = (sigcontext *) ctxvoid;
@@ -151,17 +80,14 @@ static void nativeCrashSignalHandler(int signo, siginfo *siginfo, void *ctxvoid)
     }
 }
 
-/// Register signal handler for crashes
-static bool registerSignalHandler(CrashSignalHandler handler, struct sigaction old_handlers[NSIG]) {
+bool registerSignalHandler(CrashSignalHandler handler, struct sigaction old_handlers[NSIG]) {
     struct sigaction sigactionstruct;
     memset(&sigactionstruct, 0, sizeof(sigactionstruct));
     sigactionstruct.sa_flags = SA_SIGINFO;
     sigactionstruct.sa_sigaction = handler;
 
     // Register new handlers for all signals
-    for (int index = 0; index < sizeofa(SIGNALS_TO_CATCH); ++index) {
-        const int signo = SIGNALS_TO_CATCH[index];
-
+    for (int signo : SIGNALS_TO_CATCH) {
         if (sigaction(signo, &sigactionstruct, &old_handlers[signo])) {
             return false;
         }
@@ -170,10 +96,7 @@ static bool registerSignalHandler(CrashSignalHandler handler, struct sigaction o
     return true;
 }
 
-
-
-/// Unregister already register signal handler
-static void unregisterSignalHandler(struct sigaction old_handlers[NSIG]) {
+void unregisterSignalHandler(struct sigaction old_handlers[NSIG]) {
     // Recover old handler for all signals
     for (int signo = 0; signo < NSIG; ++signo) {
         const struct sigaction* old_handler = &old_handlers[signo];
@@ -186,25 +109,7 @@ static void unregisterSignalHandler(struct sigaction old_handlers[NSIG]) {
     }
 }
 
-/// like TestFairy.stop() but for crashes
-static bool deinitializeNativeCrashHandler() {
-    // Check if already deinitialized
-    if (!crashInContext) return false;
-
-    // Unregister signal handlers
-    unregisterSignalHandler(crashInContext->old_handlers);
-
-    // Free singleton crash handler context
-    free(crashInContext);
-    crashInContext = nullptr;
-
-    __android_log_print(ANDROID_LOG_ERROR, "NDK Playground", "%s", "Native crash handler successfully deinitialized.");
-
-    return true;
-}
-
-/// like TestFairy.begin() but for crashes
-static void initializeNativeCrashHandler() {
+void initializeNativeCrashHandler() {
     // Check if already initialized
     if (crashInContext) {
         __android_log_print(ANDROID_LOG_INFO, "NDK Playground", "%s", "Native crash handler is already initialized.");
@@ -225,74 +130,75 @@ static void initializeNativeCrashHandler() {
     __android_log_print(ANDROID_LOG_ERROR, "NDK Playground", "%s", "Native crash handler successfully initialized.");
 }
 
-//////////////////////////////////////////////////////
+bool deinitializeNativeCrashHandler() {
+    // Check if already deinitialized
+    if (!crashInContext) return false;
 
+    // Unregister signal handlers
+    unregisterSignalHandler(crashInContext->old_handlers);
+
+    // Free singleton crash handler context
+    free(crashInContext);
+    crashInContext = nullptr;
+
+    __android_log_print(ANDROID_LOG_ERROR, "NDK Playground", "%s", "Native crash handler successfully deinitialized.");
+
+    return true;
+}
 /// Jni bindings
-
 extern "C" JNIEXPORT void JNICALL
-Java_com_testfairy_ndkplayground_MainActivity_initSignalHandler(
+Java_ru_arvrlab_ndkcrashhandler_SignalHandler_initSignalHandler(
         JNIEnv* env,
         jobject /* this */) {
     initializeNativeCrashHandler();
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_testfairy_ndkplayground_MainActivity_deinitSignalHandler(
+Java_ru_arvrlab_ndkcrashhandler_SignalHandler_deinitSignalHandler(
         JNIEnv* env,
         jobject /* this */) {
     deinitializeNativeCrashHandler();
 }
 
-/// Our custom test exception. Anything "publicly" inheriting std::exception will work
-class MyException : public std::exception {
-public:
-    const char* what() const noexcept override {
-        return "This is a really important crash message!";
-    }
-};
-
-int* a = nullptr;
-
-
 extern "C" JNIEXPORT void JNICALL
-Java_com_testfairy_ndkplayground_MainActivity_crashAndGetExceptionMessage(
-        JNIEnv* env,
+Java_ru_arvrlab_ndkcrashhandler_SignalHandler_crashAndGetExceptionMessage(
+        JNIEnv *env,
         jobject thiz, jthrowable exception) {
     //env->ThrowNew(env->GetObjectClass(exception),"Oh my pony");
+    int *a = nullptr;
     a[10] = 6;
     env->ExceptionCheck();
     //throw MyException(); // This can be replaced with any foreign function call that throws.
 }
 
-std::string readStringFromLogFile(std::ifstream &input_stream){
-    input_stream.open(log_path, std::ios::in);
-    std::stringstream buffer;
-    buffer << input_stream.rdbuf();
-    input_stream.close();
-    return buffer.str();
-}
-//////////////////////////////////////////////////////
 extern "C"
-JNIEXPORT jint JNICALL
-Java_com_testfairy_ndkplayground_CrashLogService_checkForErrorMessage(JNIEnv *env, jobject thiz) {
-    std::string log_from_file = readStringFromLogFile(ifs);
-    if (std::strlen(log_from_file.c_str()) > 0) {
+JNIEXPORT jboolean JNICALL
+Java_ru_arvrlab_ndkcrashhandler_SignalWatcher_isErrorMessageExistInLog(JNIEnv *env, jobject thiz) {
+    std::string log_from_file = readStringFromLogFile(ifs, log_path);
+    if (!log_from_file.empty()) {
         //DEMO_LOG("Intercept crash log: %s", log_from_file.c_str())
-        return 1;
-    } else return 0;
-}extern "C"
+        return true;
+    } else return false;
+}
+
+extern "C"
 JNIEXPORT jstring JNICALL
-Java_com_testfairy_ndkplayground_CrashLogService_getErrorMessage(JNIEnv *env, jobject thiz) {
-    std::string log_from_file = readStringFromLogFile(ifs);
+Java_ru_arvrlab_ndkcrashhandler_SignalWatcher_getLastErrorMessage(JNIEnv *env, jobject thiz) {
+    std::string log_from_file = readStringFromLogFile(ifs, log_path);
     auto remove_status = std::remove(log_path.c_str());
     DEMO_LOG("Remove intercepted log.txt: %i", remove_status)
     DEMO_LOG("Extracted log: %s", log_from_file.c_str())
     jstring log_from_file_jni = env->NewStringUTF(log_from_file.c_str());
+    assert(!log_from_file.empty() && "isLogFilled");
     return log_from_file_jni;
 }
+
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_testfairy_ndkplayground_MyApp_createLogFile(JNIEnv *env, jobject thiz, jint app_pid, jstring cache_path) {
+Java_ru_arvrlab_ndkcrashhandler_SignalHandler_createLogFile(JNIEnv *env, jobject thiz, jint app_pid,
+                                                            jstring cache_path) {
+    assert(app_pid != 0 && "isCachePathProvided");
+    assert(cache_path != nullptr && "isCachePathProvided");
     crash_absolute_path = (char *) env->GetStringUTFChars(cache_path, 0);
     //Remove old and create new empty log.txt
     log_path = crash_absolute_path, log_path += "log.txt";
