@@ -4,7 +4,7 @@ Lib that watch for signal crashes (SIGSEGV and e.t.c) and perform actions after 
 ### Libs
 [ndk-stack](https://developer.android.com/ndk/guides/ndk-stack)
 [ivanarh | JNDCrash lib - Signal crash handler](https://github.com/ivanarh/jndcrash)
-#### Repositories
+### Repositories
 [TestFairy | NDK Playground](https://github.com/testfairy-blog/NdkPlayground)
 [9majka | NDK Overall presentation in Ukraine](https://github.com/9majka/NDK_presentation)
 [ivanarh | JNDCrash lib - Signal crash handler](https://github.com/ivanarh/jndcrash)
@@ -33,7 +33,7 @@ Lib that watch for signal crashes (SIGSEGV and e.t.c) and perform actions after 
 [pipe | man](https://man7.org/linux/man-pages/man2/pipe.2.html)
 [read | man](https://man7.org/linux/man-pages/man2/read.2.html)
 [How to use pipe between parent and child process](https://stackoverflow.com/questions/54505699/how-to-use-pipe-between-parent-and-child-process-after-call-to-popen)
-[https://stackoverflow.com/questions/54619208/what-happens-when-i-try-to-read-from-a-pipe-without-writing-to-it](https://stackoverflow.com/questions/54619208/what-happens-when-i-try-to-read-from-a-pipe-without-writing-to-it)
+[Read from a pipe without writing to it](https://stackoverflow.com/questions/54619208/what-happens-when-i-try-to-read-from-a-pipe-without-writing-to-it)
 [Pipe is not working correctly in the parent-child process](https://stackoverflow.com/questions/24431553/pipe-is-not-working-correctly-in-the-parent-child-process)
 ### Services
 [Android Developers | Service in process](https://developer.android.com/guide/components/services?hl=ru#java)
