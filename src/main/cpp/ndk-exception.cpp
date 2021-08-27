@@ -1,6 +1,116 @@
 #include "includes/Exception.h"
 #include "includes/utils.h"
 
+static void LogSignalInfo(siginfo_t* info) {
+    switch (info->si_signo) {
+        case SIGILL:
+            DEMO_LOG("signal SIGILL caught");
+            switch (info->si_code) {
+                case ILL_ILLOPC:
+                    DEMO_LOG("illegal opcode");
+                    break;
+                case ILL_ILLOPN:
+                    DEMO_LOG("illegal operand");
+                    break;
+                case ILL_ILLADR:
+                    DEMO_LOG("illegal addressing mode");
+                    break;
+                case ILL_ILLTRP:
+                    DEMO_LOG("illegal trap");
+                    break;
+                case ILL_PRVOPC:
+                    DEMO_LOG("privileged opcode");
+                    break;
+                case ILL_PRVREG:
+                    DEMO_LOG("privileged register");
+                    break;
+                case ILL_COPROC:
+                    DEMO_LOG("coprocessor error");
+                    break;
+                case ILL_BADSTK:
+                    DEMO_LOG("internal stack error");
+                    break;
+                default:
+                    DEMO_LOG("code = %d", info->si_code);
+                    break;
+            }
+            break;
+        case SIGFPE:
+            DEMO_LOG("signal SIGFPE caught");
+            switch (info->si_code) {
+                case FPE_INTDIV:
+                    DEMO_LOG("integer divide by zero");
+                    break;
+                case FPE_INTOVF:
+                    DEMO_LOG("integer overflow");
+                    break;
+                case FPE_FLTDIV:
+                    DEMO_LOG("floating-point divide by zero");
+                    break;
+                case FPE_FLTOVF:
+                    DEMO_LOG("floating-point overflow");
+                    break;
+                case FPE_FLTUND:
+                    DEMO_LOG("floating-point underflow");
+                    break;
+                case FPE_FLTRES:
+                    DEMO_LOG("floating-point inexact result");
+                    break;
+                case FPE_FLTINV:
+                    DEMO_LOG("invalid floating-point operation");
+                    break;
+                case FPE_FLTSUB:
+                    DEMO_LOG("subscript out of range");
+                    break;
+                default:
+                    DEMO_LOG("code = %d", info->si_code);
+                    break;
+            }
+            break;
+        case SIGSEGV:
+            DEMO_LOG("signal SIGSEGV caught");
+            switch (info->si_code) {
+                case SEGV_MAPERR:
+                    DEMO_LOG("address not mapped to object");
+                    break;
+                case SEGV_ACCERR:
+                    DEMO_LOG("invalid permissions for mapped object");
+                    break;
+                default:
+                    DEMO_LOG("code = %d", info->si_code);
+                    break;
+            }
+            break;
+        case SIGBUS:
+            DEMO_LOG("signal SIGBUS caught");
+            switch (info->si_code) {
+                case BUS_ADRALN:
+                    DEMO_LOG("invalid address alignment");
+                    break;
+                case BUS_ADRERR:
+                    DEMO_LOG("nonexistent physical address");
+                    break;
+                case BUS_OBJERR:
+                    DEMO_LOG("object-specific hardware error");
+                    break;
+                default:
+                    DEMO_LOG("code = %d", info->si_code);
+                    break;
+            }
+            break;
+        case SIGABRT:
+            DEMO_LOG("signal SIGABRT caught");
+            break;
+        case SIGPIPE:
+            DEMO_LOG("signal SIGPIPE caught");
+            break;
+        default:
+            DEMO_LOG("signo %d caught", info->si_signo);
+            DEMO_LOG("code = %d", info->si_code);
+    }
+    DEMO_LOG("errno = %d", info->si_errno);
+}
+
 const char* createCrashMessage(int signo, siginfo* siginfo) {
     void* current_exception = __cxxabiv1::__cxa_current_primary_exception();
     std::type_info* current_exception_type_info = __cxxabiv1::__cxa_current_exception_type();
@@ -65,6 +175,7 @@ void nativeCrashSignalHandler(int signo, siginfo *siginfo, void *ctxvoid) {
     assert(signal_ucontext);
     const sigcontext* signal_mcontext = (sigcontext*) &(signal_ucontext->uc_mcontext);
     assert(signal_mcontext);
+    LogSignalInfo(siginfo);
     // Log crash message
     auto log_msg = createCrashMessage(signo, siginfo);
     //DEMO_LOG("Log msg: %s", log_msg)
