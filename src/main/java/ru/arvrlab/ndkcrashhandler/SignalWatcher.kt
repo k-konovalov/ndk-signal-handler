@@ -14,20 +14,20 @@ class SignalWatcher {
     var actionAfterError: ActionAfterError? = null
     private var isTaskThrown = AtomicBoolean(false)
 
-    fun startCrashWatcher() {
+    fun startCrashWatcher(logPath: String) {
         isTaskThrown.set(true)
         executor.execute {
-            waitForError()
-            Log.e(this.javaClass.name, "Crash fired with error:\n${getLastErrorMessage()}")
+            waitForError(logPath)
+            Log.e(this.javaClass.name, "Crash fired with error:\n${getLastErrorMessage(logPath)}")
             actionAfterError?.doIt()
         }
     }
 
-    private fun waitForError() {
+    private fun waitForError(logPath: String) {
         var isError = false
         while (!isError || !isTaskThrown.get()) {
             Thread.sleep(1000)
-            isError = isErrorMessageExistInLog()
+            isError = isErrorMessageExistInLog(logPath)
         }
         isTaskThrown.set(false)
     }
@@ -35,10 +35,10 @@ class SignalWatcher {
     /** Check new bytes in log
      * @return true if founded, else false
      */
-    private external fun isErrorMessageExistInLog(): Boolean
+    private external fun isErrorMessageExistInLog(logPath: String): Boolean
     /** Read from log file last error
      */
-    private external fun getLastErrorMessage(): String
+    private external fun getLastErrorMessage(logPath: String): String
 
     interface ActionAfterError {
         fun doIt()

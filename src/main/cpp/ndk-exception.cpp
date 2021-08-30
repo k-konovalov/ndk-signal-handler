@@ -1,114 +1,117 @@
 #include "includes/Exception.h"
 #include "includes/utils.h"
 
-static void LogSignalInfo(siginfo_t* info) {
+static std::string LogSignalInfo(siginfo_t* info) {
+    std::string signalDescription;
     switch (info->si_signo) {
         case SIGILL:
-            DEMO_LOG("signal SIGILL caught");
+            signalDescription += "signal SIGILL caught: ";
             switch (info->si_code) {
                 case ILL_ILLOPC:
-                    DEMO_LOG("illegal opcode");
+                     signalDescription += "illegal opcode";
                     break;
                 case ILL_ILLOPN:
-                    DEMO_LOG("illegal operand");
+                     signalDescription += "illegal operand";
                     break;
                 case ILL_ILLADR:
-                    DEMO_LOG("illegal addressing mode");
+                     signalDescription += "illegal addressing mode";
                     break;
                 case ILL_ILLTRP:
-                    DEMO_LOG("illegal trap");
+                     signalDescription += "illegal trap";
                     break;
                 case ILL_PRVOPC:
-                    DEMO_LOG("privileged opcode");
+                     signalDescription += "privileged opcode";
                     break;
                 case ILL_PRVREG:
-                    DEMO_LOG("privileged register");
+                     signalDescription += "privileged register";
                     break;
                 case ILL_COPROC:
-                    DEMO_LOG("coprocessor error");
+                     signalDescription += "coprocessor error";
                     break;
                 case ILL_BADSTK:
-                    DEMO_LOG("internal stack error");
+                     signalDescription += "internal stack error";
                     break;
                 default:
-                    DEMO_LOG("code = %d", info->si_code);
+                     signalDescription += "code = %d" + std::to_string(info->si_code);
                     break;
             }
             break;
         case SIGFPE:
-            DEMO_LOG("signal SIGFPE caught");
+             signalDescription += "signal SIGFPE caught: ";
             switch (info->si_code) {
                 case FPE_INTDIV:
-                    DEMO_LOG("integer divide by zero");
+                     signalDescription += "integer divide by zero";
                     break;
                 case FPE_INTOVF:
-                    DEMO_LOG("integer overflow");
+                     signalDescription += "integer overflow";
                     break;
                 case FPE_FLTDIV:
-                    DEMO_LOG("floating-point divide by zero");
+                     signalDescription += "floating-point divide by zero";
                     break;
                 case FPE_FLTOVF:
-                    DEMO_LOG("floating-point overflow");
+                     signalDescription += "floating-point overflow";
                     break;
                 case FPE_FLTUND:
-                    DEMO_LOG("floating-point underflow");
+                     signalDescription += "floating-point underflow";
                     break;
                 case FPE_FLTRES:
-                    DEMO_LOG("floating-point inexact result");
+                     signalDescription += "floating-point inexact result";
                     break;
                 case FPE_FLTINV:
-                    DEMO_LOG("invalid floating-point operation");
+                     signalDescription += "invalid floating-point operation";
                     break;
                 case FPE_FLTSUB:
-                    DEMO_LOG("subscript out of range");
+                     signalDescription += "subscript out of range";
                     break;
                 default:
-                    DEMO_LOG("code = %d", info->si_code);
+                     signalDescription += "code = %d" + std::to_string(info->si_code);
                     break;
             }
             break;
         case SIGSEGV:
-            DEMO_LOG("signal SIGSEGV caught");
+            signalDescription += "signal SIGSEGV caught: ";
             switch (info->si_code) {
                 case SEGV_MAPERR:
-                    DEMO_LOG("address not mapped to object");
+                     signalDescription += "address not mapped to object";
                     break;
                 case SEGV_ACCERR:
-                    DEMO_LOG("invalid permissions for mapped object");
+                     signalDescription += "invalid permissions for mapped object";
                     break;
                 default:
-                    DEMO_LOG("code = %d", info->si_code);
+                     signalDescription += "code = " + std::to_string(info->si_code);
                     break;
             }
             break;
         case SIGBUS:
-            DEMO_LOG("signal SIGBUS caught");
+             signalDescription += "signal SIGBUS caught: ";
             switch (info->si_code) {
                 case BUS_ADRALN:
-                    DEMO_LOG("invalid address alignment");
+                     signalDescription += "invalid address alignment";
                     break;
                 case BUS_ADRERR:
-                    DEMO_LOG("nonexistent physical address");
+                     signalDescription += "nonexistent physical address";
                     break;
                 case BUS_OBJERR:
-                    DEMO_LOG("object-specific hardware error");
+                     signalDescription += "object-specific hardware error";
                     break;
                 default:
-                    DEMO_LOG("code = %d", info->si_code);
+                     signalDescription += "code = " + std::to_string(info->si_code);
                     break;
             }
             break;
         case SIGABRT:
-            DEMO_LOG("signal SIGABRT caught");
+             signalDescription += "signal SIGABRT caught";
             break;
         case SIGPIPE:
-            DEMO_LOG("signal SIGPIPE caught");
+             signalDescription += "signal SIGPIPE caught";
             break;
         default:
-            DEMO_LOG("signo %d caught", info->si_signo);
-            DEMO_LOG("code = %d", info->si_code);
+            signalDescription += "signo %d caught", signalDescription += std::to_string(info->si_signo);
+            signalDescription += "code = " + std::to_string(info->si_code);
     }
-    DEMO_LOG("errno = %d", info->si_errno);
+    signalDescription += "errno = " + std::to_string(info->si_errno);
+    signalDescription += "\n";
+    return signalDescription;
 }
 
 const char* createCrashMessage(int signo, siginfo* siginfo) {
@@ -175,10 +178,10 @@ void nativeCrashSignalHandler(int signo, siginfo *siginfo, void *ctxvoid) {
     assert(signal_ucontext);
     const sigcontext* signal_mcontext = (sigcontext*) &(signal_ucontext->uc_mcontext);
     assert(signal_mcontext);
-    LogSignalInfo(siginfo);
+
     // Log crash message
-    auto log_msg = createCrashMessage(signo, siginfo);
-    //DEMO_LOG("Log msg: %s", log_msg)
+    std::string log_msg = LogSignalInfo(siginfo) + createCrashMessage(signo, siginfo);
+    DEMO_LOG("App last msg: %s", log_msg.c_str())
     ofs.open(log_path, std::ios::out);
     ofs << log_msg;
     ofs.close();
@@ -284,23 +287,34 @@ Java_ru_arvrlab_ndkcrashhandler_SignalHandler_crashAndGetExceptionMessage(
 
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_ru_arvrlab_ndkcrashhandler_SignalWatcher_isErrorMessageExistInLog(JNIEnv *env, jobject thiz) {
-    std::string log_from_file = readStringFromLogFile(ifs, log_path);
+Java_ru_arvrlab_ndkcrashhandler_SignalWatcher_isErrorMessageExistInLog(JNIEnv *env, jobject thiz,
+                                                                       jstring provided_log_path) {
+    auto localLogPath = env->GetStringUTFChars(provided_log_path, 0);
+    DEMO_LOG("Check crash log in %s", localLogPath)
+    assert(strlen(localLogPath) != 0 && "isLogPathEmpty");
+
+    std::string log_from_file = readStringFromLogFile(ifs, localLogPath);
+
     if (!log_from_file.empty()) {
-        //DEMO_LOG("Intercept crash log: %s", log_from_file.c_str())
+        DEMO_LOG("Intercept crash log: %s", log_from_file.c_str())
         return true;
-    } else return false;
+    } else {
+        DEMO_LOG("Empty Crash log from %s", localLogPath)
+        return false;
+    }
 }
 
 extern "C"
 JNIEXPORT jstring JNICALL
-Java_ru_arvrlab_ndkcrashhandler_SignalWatcher_getLastErrorMessage(JNIEnv *env, jobject thiz) {
-    std::string log_from_file = readStringFromLogFile(ifs, log_path);
-    auto remove_status = std::remove(log_path.c_str());
+Java_ru_arvrlab_ndkcrashhandler_SignalWatcher_getLastErrorMessage(JNIEnv *env, jobject thiz,
+                                                                  jstring provided_log_path) {
+    auto localLogPath = env->GetStringUTFChars(provided_log_path, 0);
+    std::string log_from_file = readStringFromLogFile(ifs, localLogPath);
+    auto remove_status = std::remove(localLogPath);
     DEMO_LOG("Remove intercepted log.txt: %i", remove_status)
     DEMO_LOG("Extracted log: %s", log_from_file.c_str())
     jstring log_from_file_jni = env->NewStringUTF(log_from_file.c_str());
-    assert(!log_from_file.empty() && "isLogFilled");
+    assert(!log_from_file.empty() && "isLogFilled" );
     return log_from_file_jni;
 }
 
@@ -312,7 +326,7 @@ Java_ru_arvrlab_ndkcrashhandler_SignalHandler_nativeCreateLogFile(JNIEnv *env, j
     assert(cache_path != nullptr && "isCachePathProvided");
     crash_absolute_path = (char *) env->GetStringUTFChars(cache_path, 0);
     //Remove old and create new empty log.txt
-    log_path = crash_absolute_path, log_path += "log.txt";
+    log_path = crash_absolute_path, log_path += "/log.txt";
     auto remove_status = std::remove(log_path.c_str());
     DEMO_LOG("Init log.txt\nin PID %i\nRemove old log.txt: %i\nLog path: %s",
              app_pid, remove_status, log_path.c_str())

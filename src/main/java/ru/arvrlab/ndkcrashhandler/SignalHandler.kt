@@ -12,24 +12,27 @@ class SignalHandler {
     fun initSignalHandler(
         context: Context,
         appPid: Int,
-        cachePath: String?,
+        cachePath: String,
         activityPackageName: String, activityClassName: String
     ) {
         nativeCreateLogFile(appPid, cachePath)
         nativeInitSignalHandler()
-        startSignalService(context, activityPackageName, activityClassName)
+        startSignalService(context, activityPackageName, activityClassName, cachePath)
+        Thread.sleep(5000);
+        crashAndGetExceptionMessage(null)
     }
 
     private fun startSignalService(
         context: Context,
         activityPackageName: String,
-        activityClassName: String
+        activityClassName: String,cachePath: String
     ) {
         val intent = Intent(context, SignalService::class.java).apply {
             putExtra(EXTRA_ACTIVITY_PPID, Os.getppid())
             putExtra(EXTRA_ACTIVITY_PID, Os.getpid())
             putExtra(EXTRA_ACTIVITY_PACKAGE, activityPackageName)
             putExtra(EXTRA_ACTIVITY_PACKAGE_CLASS, "$activityPackageName.$activityClassName")
+            putExtra(EXTRA_LOG_PATH,"$cachePath/$LOG_FILENAME")
         }
         context.startService(intent)
     }
