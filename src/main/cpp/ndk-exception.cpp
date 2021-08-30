@@ -258,14 +258,14 @@ bool deinitializeNativeCrashHandler() {
 }
 /// Jni bindings
 extern "C" JNIEXPORT void JNICALL
-Java_ru_arvrlab_ndkcrashhandler_SignalHandler_initSignalHandler(
+Java_ru_arvrlab_ndkcrashhandler_SignalHandler_nativeInitSignalHandler(
         JNIEnv* env,
         jobject /* this */) {
     initializeNativeCrashHandler();
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_ru_arvrlab_ndkcrashhandler_SignalHandler_deinitSignalHandler(
+Java_ru_arvrlab_ndkcrashhandler_SignalHandler_nativeDeinitSignalHandler(
         JNIEnv* env,
         jobject /* this */) {
     deinitializeNativeCrashHandler();
@@ -306,8 +306,8 @@ Java_ru_arvrlab_ndkcrashhandler_SignalWatcher_getLastErrorMessage(JNIEnv *env, j
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_ru_arvrlab_ndkcrashhandler_SignalHandler_createLogFile(JNIEnv *env, jobject thiz, jint app_pid,
-                                                            jstring cache_path) {
+Java_ru_arvrlab_ndkcrashhandler_SignalHandler_nativeCreateLogFile(JNIEnv *env, jobject thiz, jint app_pid,
+                                                                  jstring cache_path) {
     assert(app_pid != 0 && "isCachePathProvided");
     assert(cache_path != nullptr && "isCachePathProvided");
     crash_absolute_path = (char *) env->GetStringUTFChars(cache_path, 0);
