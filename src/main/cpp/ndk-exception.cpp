@@ -109,7 +109,7 @@ static std::string LogSignalInfo(siginfo_t* info) {
             signalDescription += "signo %d caught", signalDescription += std::to_string(info->si_signo);
             signalDescription += "code = " + std::to_string(info->si_code);
     }
-    signalDescription += "errno = " + std::to_string(info->si_errno);
+    signalDescription += "\nerrno = " + std::to_string(info->si_errno);
     signalDescription += "\n";
     return signalDescription;
 }
@@ -320,14 +320,11 @@ Java_ru_arvrlab_ndkcrashhandler_SignalWatcher_getLastErrorMessage(JNIEnv *env, j
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_ru_arvrlab_ndkcrashhandler_SignalHandler_nativeCreateLogFile(JNIEnv *env, jobject thiz, jint app_pid,
+Java_ru_arvrlab_ndkcrashhandler_SignalHandler_nativeCreateLogFile(JNIEnv *env, jobject thiz,
                                                                   jstring cache_path) {
-    assert(app_pid != 0 && "isCachePathProvided");
     assert(cache_path != nullptr && "isCachePathProvided");
     crash_absolute_path = (char *) env->GetStringUTFChars(cache_path, 0);
-    //Remove old and create new empty log.txt
+    //Create new empty log.txt
     log_path = crash_absolute_path, log_path += "/log.txt";
-    auto remove_status = std::remove(log_path.c_str());
-    DEMO_LOG("Init log.txt\nin PID %i\nRemove old log.txt: %i\nLog path: %s",
-             app_pid, remove_status, log_path.c_str())
+    DEMO_LOG("Init log.txt at path: %s", log_path.c_str())
 }
