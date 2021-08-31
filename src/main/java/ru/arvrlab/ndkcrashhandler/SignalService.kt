@@ -6,19 +6,25 @@ import android.os.IBinder
 import android.system.Os
 import android.util.Log
 import ru.arvrlab.ndkcrashhandler.SignalWatcher.ActionAfterError
+import java.lang.IllegalStateException
 
 const val EXTRA_ACTIVITY_PID = "EXTRA_ACTIVITY_PID"
-const val EXTRA_ACTIVITY_PPID = "EXTRA_ACTIVITY_PPID"
 const val EXTRA_ACTIVITY_PACKAGE = "EXTRA_ACTIVITY_PACKAGE"
 const val EXTRA_ACTIVITY_PACKAGE_CLASS = "EXTRA_ACTIVITY_PACKAGE_CLASS"
+const val EXTRA_LOG_PATH = "EXTRA_LOG_PATH"
+const val LOG_FILENAME = "log.txt"
+const val EXTRA_APP_RESURRECT = "EXTRA_ACTIVITY_PID"
 
 class SignalService : Service() {
     private val signalWatcher = SignalWatcher()
-    private val customIntent: Intent = Intent()
+    private val customIntent: Intent = Intent().apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
     private val actionAfterSignalError = object : ActionAfterError {
         override fun doIt() {
-            Log.e(this.javaClass.simpleName, "Try to restart last activity")
-            startActivity(customIntent ?: return)
+            customIntent.component?.run {
+                Log.i("SignalService", "Trying to restart $className")
+            }
+            customIntent.extras?.putBoolean(EXTRA_APP_RESURRECT, true)
+            startActivity(customIntent)
         }
     }
 
@@ -29,8 +35,13 @@ class SignalService : Service() {
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         setupActionForRestart(intent)
         logPids(intent)
-        setupAndLaunchSignalWatcher()
+        setupAndLaunchSignalWatcher(intent)
         return START_STICKY
+    }
+
+    override fun onDestroy() {
+        signalWatcher.stop()
+        super.onDestroy()
     }
 
     private fun setupActionForRestart(intent: Intent){
@@ -42,13 +53,17 @@ class SignalService : Service() {
     private fun logPids(intent: Intent?) {
         if (intent != null) {
             val activityPid = intent.getIntExtra(EXTRA_ACTIVITY_PID, 0)
+            val activityClass = intent.getStringExtra(EXTRA_ACTIVITY_PACKAGE_CLASS) ?: ""
             val servicePid = Os.getpid()
-            Log.e(this.javaClass.simpleName, "Service with PID: " + servicePid + " watch over Activity with PID " + activityPid + " in APP with PID " + Os.getppid())
+            Log.i(this.javaClass.simpleName, "Service with PID $servicePid watch over $activityClass with PID $activityPid")
         }
     }
 
-    private fun setupAndLaunchSignalWatcher() {
-        signalWatcher.startCrashWatcher()
+    private fun setupAndLaunchSignalWatcher(intent: Intent) {
+        val activityClass = intent.getStringExtra(EXTRA_ACTIVITY_PACKAGE_CLASS) ?: ""
+        val logPath = intent.getStringExtra(EXTRA_LOG_PATH) ?: throw IllegalStateException("No cache path for signal crashes provided")
+        signalWatcher.start(logPath, activityClass)
+        signalWatcher.actionAfterError = actionAfterSignalError
     }
 
     fun provideCustomAction(customActionAfterSignalError: ActionAfterError?) {

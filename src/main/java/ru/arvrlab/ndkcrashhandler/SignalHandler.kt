@@ -3,38 +3,41 @@ package ru.arvrlab.ndkcrashhandler
 import android.content.Context
 import android.content.Intent
 import android.system.Os
+import android.util.Log
 
 class SignalHandler {
     init {
         System.loadLibrary("ndk-crash-handler")
     }
 
+    private var serviceIntent: Intent? = null
+
     fun initSignalHandler(
         context: Context,
-        appPid: Int,
-        cachePath: String?,
+        cachePath: String,
         activityPackageName: String, activityClassName: String
     ) {
-        nativeCreateLogFile(appPid, cachePath)
+        nativeCreateLogFile(cachePath)
         nativeInitSignalHandler()
-        startSignalService(context, activityPackageName, activityClassName)
+        startSignalService(context, activityPackageName, activityClassName, cachePath)
     }
 
     private fun startSignalService(
         context: Context,
         activityPackageName: String,
-        activityClassName: String
+        activityClassName: String,cachePath: String
     ) {
-        val intent = Intent(context, SignalService::class.java).apply {
-            putExtra(EXTRA_ACTIVITY_PPID, Os.getppid())
+        serviceIntent = Intent(context, SignalService::class.java).apply {
             putExtra(EXTRA_ACTIVITY_PID, Os.getpid())
             putExtra(EXTRA_ACTIVITY_PACKAGE, activityPackageName)
             putExtra(EXTRA_ACTIVITY_PACKAGE_CLASS, "$activityPackageName.$activityClassName")
+            putExtra(EXTRA_LOG_PATH,"$cachePath/$LOG_FILENAME")
         }
-        context.startService(intent)
+        context.startService(serviceIntent ?: return)
     }
 
-    fun deinitSignalHandler() {
+    fun deinitSignalHandler(context: Context) {
+        context.stopService(serviceIntent ?: return)
         nativeDeinitSignalHandler()
     }
 
@@ -60,5 +63,5 @@ class SignalHandler {
      * @param appId: App PID
      * @param cacheCrashPath: Cache path to log.txt
      */
-    external fun nativeCreateLogFile(appId: Int, cacheCrashPath: String?)
+    external fun nativeCreateLogFile(cacheCrashPath: String?)
 }
