@@ -13,6 +13,7 @@ const val EXTRA_ACTIVITY_PACKAGE = "EXTRA_ACTIVITY_PACKAGE"
 const val EXTRA_ACTIVITY_PACKAGE_CLASS = "EXTRA_ACTIVITY_PACKAGE_CLASS"
 const val EXTRA_LOG_PATH = "EXTRA_LOG_PATH"
 const val LOG_FILENAME = "log.txt"
+const val EXTRA_APP_RESURRECT = "EXTRA_ACTIVITY_PID"
 
 class SignalService : Service() {
     private val signalWatcher = SignalWatcher()
@@ -22,6 +23,7 @@ class SignalService : Service() {
             customIntent.component?.run {
                 Log.i("SignalService", "Trying to restart $className")
             }
+            customIntent.extras?.putBoolean(EXTRA_APP_RESURRECT, true)
             startActivity(customIntent)
         }
     }
