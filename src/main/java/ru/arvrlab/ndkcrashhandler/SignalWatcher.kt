@@ -3,7 +3,6 @@ package ru.arvrlab.ndkcrashhandler
 import android.util.Log
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 
 class SignalWatcher {
     init {
@@ -12,24 +11,33 @@ class SignalWatcher {
 
     private val executor: Executor = Executors.newSingleThreadExecutor()
     var actionAfterError: ActionAfterError? = null
-    private var isTaskThrown = AtomicBoolean(false)
+    private var isWatcherEnabled = false
 
-    fun startCrashWatcher(logPath: String) {
-        isTaskThrown.set(true)
-        executor.execute {
-            waitForError(logPath)
-            Log.e(this.javaClass.name, "Crash fired with error:\n${getLastErrorMessage(logPath)}")
-            actionAfterError?.doIt()
+    fun start(logPath: String, activityClass: String) {
+        if (!isWatcherEnabled) executor.execute {
+            isWatcherEnabled = true
+            waitForError(logPath, activityClass)
         }
     }
 
-    private fun waitForError(logPath: String) {
-        var isError = false
-        while (!isError || !isTaskThrown.get()) {
-            Thread.sleep(1000)
-            isError = isErrorMessageExistInLog(logPath)
+    private fun waitForError(logPath: String, activityClass: String) {
+        var isErrorMsgExist: Boolean
+        var rescueAttempt = 0
+        while (isWatcherEnabled) {
+            Thread.sleep(2000)
+            isErrorMsgExist = isErrorMessageExistInLog(logPath)
+            Log.i(this.javaClass.name, "I'm alive.\nWatching over ${activityClass.split(".").last()} in $logPath.\nApp restarted $rescueAttempt times.")
+            if (isErrorMsgExist) {
+                Log.i(this.javaClass.name, "Crash fired with error:\n${getLastErrorMessage(logPath)}")
+                rescueAttempt++
+                actionAfterError?.doIt()
+            }
         }
-        isTaskThrown.set(false)
+    }
+
+    fun stop(){
+        isWatcherEnabled = false
+        Log.i(this.javaClass.name, "Bye bye")
     }
 
     /** Check new bytes in log
