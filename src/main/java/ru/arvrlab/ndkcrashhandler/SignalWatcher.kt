@@ -14,8 +14,8 @@ class SignalWatcher {
     var actionAfterError: Runnable? = null
 
     /** Start watcher on new thread only once, during the app lifetime.
-     * @param logPath: Absolute path to log.txt
-     * @param activityClass: watch over this
+     * @param logPath Absolute path to log.txt
+     * @param activityClass watch over this
      * */
     fun start(logPath: String, activityClass: String) {
         if (!isWatcherEnabled) executor.execute {
