@@ -13,6 +13,10 @@ class SignalWatcher {
     var actionAfterError: Runnable? = null
     private var isWatcherEnabled = false
 
+    /** Start watcher only once during the app lifetime.
+     * @param logPath: Absolute path to log.txt
+     * @param activityClass: watch over this
+     * */
     fun start(logPath: String, activityClass: String) {
         if (!isWatcherEnabled) executor.execute {
             isWatcherEnabled = true
@@ -20,6 +24,7 @@ class SignalWatcher {
         }
     }
 
+    /** Check log.txt for bytes each 2000ms */
     private fun waitForError(logPath: String, activityClass: String) {
         var isErrorMsgExist: Boolean
         var rescueAttempt = 0
@@ -35,6 +40,7 @@ class SignalWatcher {
         }
     }
 
+    /** Stop watcher */
     fun stop(){
         isWatcherEnabled = false
         Log.i(this.javaClass.name, "Bye bye")
