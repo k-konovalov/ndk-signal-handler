@@ -7,5 +7,10 @@
             android:name=".SignalService"
             android:enabled="true"
             android:exported="true"/>
+        <service
+            android:process="ru.arvrlab.test"
+            android:name=".test.TestService"
+            android:enabled="true"
+            android:exported="true"/>
     </application>
 </manifest>
