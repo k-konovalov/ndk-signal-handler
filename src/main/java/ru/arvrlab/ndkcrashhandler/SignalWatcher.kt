@@ -10,10 +10,10 @@ class SignalWatcher {
     }
 
     private val executor: Executor = Executors.newSingleThreadExecutor()
-    var actionAfterError: Runnable? = null
     private var isWatcherEnabled = false
+    var actionAfterError: Runnable? = null
 
-    /** Start watcher only once during the app lifetime.
+    /** Start watcher on new thread only once, during the app lifetime.
      * @param logPath: Absolute path to log.txt
      * @param activityClass: watch over this
      * */
@@ -46,11 +46,11 @@ class SignalWatcher {
         Log.i(this.javaClass.name, "Bye bye")
     }
 
-    /** Check new bytes in log
+    /** Check new bytes in log.txt
      * @return true if founded, else false
      */
     private external fun isErrorMessageExistInLog(logPath: String): Boolean
-    /** Read from log file last error
+    /** @return last error string from log file
      */
     private external fun getLastErrorMessage(logPath: String): String
 }
