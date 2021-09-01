@@ -1,5 +1,17 @@
 # Android-NDK-Signal-handler-module
-Lib that watch for signal crashes (SIGSEGV and e.t.c) and perform actions after it
+Lib that watch for signal crashes (SIGSEGV and e.t.c) and perform actions after it (ex: Restart Activity).
+## Usage
+```kotlin
+private val signalHandler = SignalHandler()
+//In Activity onCreate
+signalHandler.initSignalHandler(
+            context = this,                     //For Intent and Service creation only
+            activityClassName = localClassName, //For restart action
+            activityPackageName = packageName   //For restart action
+        )
+//In Activity onDestroy
+signalHandler.deinitSignalHandler(this)
+```
 ## Usefull links
 ### Libs
 [ndk-stack](https://developer.android.com/ndk/guides/ndk-stack)
