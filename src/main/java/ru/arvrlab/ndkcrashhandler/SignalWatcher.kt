@@ -4,6 +4,9 @@ import android.util.Log
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
+/**
+ * Watch for Signal crash log. Restart provided activity if exist.
+ * */
 class SignalWatcher {
     init {
         System.loadLibrary("ndk-crash-handler")

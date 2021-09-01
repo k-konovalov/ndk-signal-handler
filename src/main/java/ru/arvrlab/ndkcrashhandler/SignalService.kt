@@ -14,6 +14,7 @@ const val EXTRA_LOG_PATH = "EXTRA_LOG_PATH"
 const val LOG_FILENAME = "log.txt"
 const val EXTRA_APP_RESURRECT = "EXTRA_APP_RESURRECT"
 
+/** Service with watcher daemon */
 class SignalService : Service() {
     private val signalWatcher = SignalWatcher()
     private val customIntent: Intent = Intent().apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
@@ -41,12 +42,14 @@ class SignalService : Service() {
         super.onDestroy()
     }
 
+    /** Parse class and package from Intent and setup implicit Intent */
     private fun setupActionForRestart(intent: Intent){
         val activityPackage = intent.getStringExtra(EXTRA_ACTIVITY_PACKAGE) ?: ""
         val activityClass = intent.getStringExtra(EXTRA_ACTIVITY_PACKAGE_CLASS) ?: ""
         customIntent.setClassName(activityPackage, activityClass)
     }
 
+    /** Log Pids from Intent */
     private fun logPids(intent: Intent?) {
         if (intent != null) {
             val activityPid = intent.getIntExtra(EXTRA_ACTIVITY_PID, 0)
@@ -56,14 +59,11 @@ class SignalService : Service() {
         }
     }
 
+    /** Start SignalWatcher and provide actions after signal */
     private fun setupAndLaunchSignalWatcher(intent: Intent) {
         val activityClass = intent.getStringExtra(EXTRA_ACTIVITY_PACKAGE_CLASS) ?: ""
         val logPath = intent.getStringExtra(EXTRA_LOG_PATH) ?: throw IllegalStateException("No cache path for signal crashes provided")
         signalWatcher.start(logPath, activityClass)
         signalWatcher.actionAfterError = actionAfterSignalError
-    }
-
-    fun provideCustomAction(customActionAfterSignalError: Runnable?) {
-        signalWatcher.actionAfterError = customActionAfterSignalError ?: actionAfterSignalError
     }
 }
