@@ -18,11 +18,11 @@ class SignalService : Service() {
     private val signalWatcher = SignalWatcher()
     private val customIntent: Intent = Intent().apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
     private val actionAfterSignalError = Runnable {
-        customIntent.component?.run {
-            Log.i("SignalService", "Trying to restart $className")
+        customIntent.run {
+            Log.i(this.javaClass.simpleName, "Trying to restart ${component?.className}")
+            extras?.putBoolean(EXTRA_APP_RESURRECT, true)
+            startActivity(this)
         }
-        customIntent.extras?.putBoolean(EXTRA_APP_RESURRECT, true)
-        startActivity(customIntent)
     }
 
     override fun onBind(intent: Intent): IBinder? {
