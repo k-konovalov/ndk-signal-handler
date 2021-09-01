@@ -321,10 +321,11 @@ Java_ru_arvrlab_ndkcrashhandler_SignalWatcher_getLastErrorMessage(JNIEnv *env, j
 extern "C"
 JNIEXPORT void JNICALL
 Java_ru_arvrlab_ndkcrashhandler_SignalHandler_nativeCreateLogFile(JNIEnv *env, jobject thiz,
-                                                                  jstring cache_path) {
+                                                                  jstring cache_path,
+                                                                  jstring log_file_name) {
     assert(cache_path != nullptr && "isCachePathProvided");
-    crash_absolute_path = (char *) env->GetStringUTFChars(cache_path, 0);
-    //Create new empty log.txt
-    log_path = crash_absolute_path, log_path += "/log.txt";
+    assert(log_file_name != nullptr && "isLogFilenameProvided");
+    crash_absolute_path = env->GetStringUTFChars(cache_path, 0);
+    log_path = crash_absolute_path, log_path += env->GetStringUTFChars(log_file_name, 0);
     DEMO_LOG("Init log.txt at path: %s", log_path.c_str())
 }
