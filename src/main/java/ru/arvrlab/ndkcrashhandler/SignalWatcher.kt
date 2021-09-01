@@ -10,7 +10,7 @@ class SignalWatcher {
     }
 
     private val executor: Executor = Executors.newSingleThreadExecutor()
-    var actionAfterError: ActionAfterError? = null
+    var actionAfterError: Runnable? = null
     private var isWatcherEnabled = false
 
     fun start(logPath: String, activityClass: String) {
@@ -30,7 +30,7 @@ class SignalWatcher {
             if (isErrorMsgExist) {
                 Log.i(this.javaClass.name, "Crash fired with error:\n${getLastErrorMessage(logPath)}")
                 rescueAttempt++
-                actionAfterError?.doIt()
+                actionAfterError?.run()
             }
         }
     }
@@ -47,8 +47,4 @@ class SignalWatcher {
     /** Read from log file last error
      */
     private external fun getLastErrorMessage(logPath: String): String
-
-    interface ActionAfterError {
-        fun doIt()
-    }
 }
