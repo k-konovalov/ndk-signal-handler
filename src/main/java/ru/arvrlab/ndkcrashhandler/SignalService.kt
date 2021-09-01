@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.IBinder
 import android.system.Os
 import android.util.Log
-import ru.arvrlab.ndkcrashhandler.SignalWatcher.ActionAfterError
 import java.lang.IllegalStateException
 
 const val EXTRA_ACTIVITY_PID = "EXTRA_ACTIVITY_PID"
@@ -18,14 +17,12 @@ const val EXTRA_APP_RESURRECT = "EXTRA_ACTIVITY_PID"
 class SignalService : Service() {
     private val signalWatcher = SignalWatcher()
     private val customIntent: Intent = Intent().apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-    private val actionAfterSignalError = object : ActionAfterError {
-        override fun doIt() {
-            customIntent.component?.run {
-                Log.i("SignalService", "Trying to restart $className")
-            }
-            customIntent.extras?.putBoolean(EXTRA_APP_RESURRECT, true)
-            startActivity(customIntent)
+    private val actionAfterSignalError = Runnable {
+        customIntent.component?.run {
+            Log.i("SignalService", "Trying to restart $className")
         }
+        customIntent.extras?.putBoolean(EXTRA_APP_RESURRECT, true)
+        startActivity(customIntent)
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -66,7 +63,7 @@ class SignalService : Service() {
         signalWatcher.actionAfterError = actionAfterSignalError
     }
 
-    fun provideCustomAction(customActionAfterSignalError: ActionAfterError?) {
+    fun provideCustomAction(customActionAfterSignalError: Runnable?) {
         signalWatcher.actionAfterError = customActionAfterSignalError ?: actionAfterSignalError
     }
 }
