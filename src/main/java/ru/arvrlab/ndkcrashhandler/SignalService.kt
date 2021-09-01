@@ -12,7 +12,7 @@ const val EXTRA_ACTIVITY_PACKAGE = "EXTRA_ACTIVITY_PACKAGE"
 const val EXTRA_ACTIVITY_PACKAGE_CLASS = "EXTRA_ACTIVITY_PACKAGE_CLASS"
 const val EXTRA_LOG_PATH = "EXTRA_LOG_PATH"
 const val LOG_FILENAME = "log.txt"
-const val EXTRA_APP_RESURRECT = "EXTRA_ACTIVITY_PID"
+const val EXTRA_APP_RESURRECT = "EXTRA_APP_RESURRECT"
 
 class SignalService : Service() {
     private val signalWatcher = SignalWatcher()
