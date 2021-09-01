@@ -14,9 +14,10 @@ class SignalHandler {
 
     fun initSignalHandler(
         context: Context,
-        cachePath: String,
-        activityPackageName: String, activityClassName: String
+        activityPackageName: String,
+        activityClassName: String
     ) {
+        val cachePath = context.cacheDir.absolutePath
         nativeCreateLogFile(cachePath)
         nativeInitSignalHandler()
         startSignalService(context, activityPackageName, activityClassName, cachePath)
@@ -63,5 +64,5 @@ class SignalHandler {
      * @param appId: App PID
      * @param cacheCrashPath: Cache path to log.txt
      */
-    external fun nativeCreateLogFile(cacheCrashPath: String?)
+    private external fun nativeCreateLogFile(cacheCrashPath: String?)
 }
