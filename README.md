@@ -1,4 +1,4 @@
-# Android-NDK-Signal-handler-module
+# Android NDK Signal handler module
 Lib that watch for signal crashes (SIGSEGV and e.t.c) in special Service (out-of-process) and perform actions after it (ex: Restart Activity).
 ## Usage
 ```kotlin
