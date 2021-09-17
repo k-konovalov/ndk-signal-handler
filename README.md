@@ -1,5 +1,6 @@
 # Android NDK Signal handler module
 Lib that watch for signal crashes (SIGSEGV and e.t.c) in special Service (out-of-process) and perform actions after it (ex: Restart Activity).
+![alt text](img/architecture.png "Signal handler architecture")
 ## Usage
 ```kotlin
 private val signalHandler = SignalHandler()
@@ -12,7 +13,7 @@ signalHandler.initSignalHandler(
 //In Activity onDestroy
 signalHandler.deinitSignalHandler(this)
 ```
-## Usefull links
+## Useful links
 ### Libs
 - [ndk-stack](https://developer.android.com/ndk/guides/ndk-stack)
 - [ivanarh | JNDCrash lib - Signal crash handler](https://github.com/ivanarh/jndcrash)
